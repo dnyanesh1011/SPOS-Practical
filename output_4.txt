@@ -1,0 +1,294 @@
+import java.util.*;
+
+// Class representing a Process
+class Process {
+    int pid, arrivalTime, burstTime, remainingTime, priority, waitingTime, turnaroundTime, completionTime;
+    Process(int pid, int arrivalTime, int burstTime) {
+        this.pid = pid;
+        this.arrivalTime = arrivalTime;
+        this.burstTime = burstTime;
+        this.remainingTime = burstTime;
+    }
+    Process(int pid, int arrivalTime, int burstTime, int priority) {
+        this(pid, arrivalTime, burstTime);
+        this.priority = priority;
+    }
+}
+
+public class cpu {
+    static Scanner sc = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        while (true) {
+            System.out.println("\nCPU Scheduling Algorithms Menu");
+            System.out.println("1. First Come First Serve (FCFS)");
+            System.out.println("2. Shortest Job First (SJF Preemptive)");
+            System.out.println("3. Priority Scheduling (Non-Preemptive)");
+            System.out.println("4. Round Robin Scheduling");
+            System.out.println("5. Exit");
+            System.out.print("Enter your choice: ");
+            int choice = sc.nextInt();
+
+            switch (choice) {
+                case 1 -> fcfs();
+                case 2 -> sjfPreemptive();
+                case 3 -> priorityScheduling();
+                case 4 -> roundRobin();
+                case 5 -> System.exit(0);
+                default -> System.out.println("Invalid choice!");
+            }
+        }
+    }
+
+    // FCFS Scheduling Algorithm
+    public static void fcfs() {
+        System.out.print("Enter number of processes: ");
+        int n = sc.nextInt();
+        Process[] processes = new Process[n];
+        for (int i = 0; i < n; i++) {
+            System.out.print("Enter Arrival Time and Burst Time for P" + i + ": ");
+            int at = sc.nextInt(), bt = sc.nextInt();
+            processes[i] = new Process(i, at, bt);
+        }
+        Arrays.sort(processes, Comparator.comparingInt(p -> p.arrivalTime));
+        int currentTime = 0;
+        double totalWT = 0, totalTAT = 0;
+        System.out.println("\nProcess\tArrival\tBurst\tCompletion\tWaiting\tTurnaround");
+        for (Process p : processes) {
+            if (currentTime < p.arrivalTime) currentTime = p.arrivalTime;
+            p.completionTime = currentTime + p.burstTime;
+            p.waitingTime = currentTime - p.arrivalTime;
+            p.turnaroundTime = p.burstTime + p.waitingTime;
+            currentTime += p.burstTime;
+            totalWT += p.waitingTime;
+            totalTAT += p.turnaroundTime;
+            System.out.println("P" + p.pid + "\t" + p.arrivalTime + "\t" + p.burstTime + "\t" +
+                               p.completionTime + "\t\t" + p.waitingTime + "\t" + p.turnaroundTime);
+        }
+        System.out.printf("Average Waiting Time: %.2f\n", totalWT / n);
+        System.out.printf("Average Turnaround Time: %.2f\n", totalTAT / n);
+    }
+
+    // SJF (Preemptive)
+    public static void sjfPreemptive() {
+        System.out.print("Enter number of processes: ");
+        int n = sc.nextInt();
+        Process[] processes = new Process[n];
+        for (int i = 0; i < n; i++) {
+            System.out.print("Enter Arrival Time and Burst Time for P" + i + ": ");
+            int at = sc.nextInt(), bt = sc.nextInt();
+            processes[i] = new Process(i, at, bt);
+        }
+        int completed = 0, currentTime = 0;
+        double totalWT = 0, totalTAT = 0;
+        boolean[] done = new boolean[n];
+        while (completed != n) {
+            int idx = -1, minBT = Integer.MAX_VALUE;
+            for (int i = 0; i < n; i++)
+                if (!done[i] && processes[i].arrivalTime <= currentTime && processes[i].remainingTime < minBT) {
+                    minBT = processes[i].remainingTime;
+                    idx = i;
+                }
+            if (idx == -1) { currentTime++; continue; }
+            processes[idx].remainingTime--; currentTime++;
+            if (processes[idx].remainingTime == 0) {
+                processes[idx].completionTime = currentTime;
+                processes[idx].turnaroundTime = processes[idx].completionTime - processes[idx].arrivalTime;
+                processes[idx].waitingTime = processes[idx].turnaroundTime - processes[idx].burstTime;
+                totalWT += processes[idx].waitingTime;
+                totalTAT += processes[idx].turnaroundTime;
+                done[idx] = true; completed++;
+            }
+        }
+        System.out.println("\nProcess\tArrival\tBurst\tCompletion\tWaiting\tTurnaround");
+        for (Process p : processes)
+            System.out.println("P" + p.pid + "\t" + p.arrivalTime + "\t" + p.burstTime + "\t" +
+                               p.completionTime + "\t\t" + p.waitingTime + "\t" + p.turnaroundTime);
+        System.out.printf("Average Waiting Time: %.2f\n", totalWT / n);
+        System.out.printf("Average Turnaround Time: %.2f\n", totalTAT / n);
+    }
+
+    // Round Robin Scheduling Algorithm
+    public static void roundRobin() {
+        System.out.print("Enter number of processes: ");
+        int n = sc.nextInt();
+        System.out.print("Enter Time Quantum: ");
+        int tq = sc.nextInt();
+        Process[] processes = new Process[n];
+        for (int i = 0; i < n; i++) {
+            System.out.print("Enter Arrival Time and Burst Time for P" + i + ": ");
+            int at = sc.nextInt(), bt = sc.nextInt();
+            processes[i] = new Process(i, at, bt);
+        }
+        int currentTime = 0, completed = 0;
+        double totalWT = 0, totalTAT = 0;
+        Queue<Integer> q = new LinkedList<>();
+        boolean[] visited = new boolean[n];
+        for (int i = 0; i < n; i++) if (processes[i].arrivalTime <= currentTime) { q.add(i); visited[i] = true; }
+        while (completed < n) {
+            if (q.isEmpty()) {
+                currentTime++;
+                for (int i = 0; i < n; i++)
+                    if (!visited[i] && processes[i].arrivalTime <= currentTime) { q.add(i); visited[i] = true; }
+                continue;
+            }
+            int idx = q.poll();
+            int execTime = Math.min(tq, processes[idx].remainingTime);
+            processes[idx].remainingTime -= execTime;
+            currentTime += execTime;
+            for (int i = 0; i < n; i++)
+                if (!visited[i] && processes[i].arrivalTime <= currentTime) { q.add(i); visited[i] = true; }
+            if (processes[idx].remainingTime > 0) q.add(idx);
+            else {
+                processes[idx].completionTime = currentTime;
+                processes[idx].turnaroundTime = currentTime - processes[idx].arrivalTime;
+                processes[idx].waitingTime = processes[idx].turnaroundTime - processes[idx].burstTime;
+                totalWT += processes[idx].waitingTime;
+                totalTAT += processes[idx].turnaroundTime;
+                completed++;
+            }
+        }
+        System.out.println("\nProcess\tArrival\tBurst\tCompletion\tWaiting\tTurnaround");
+        for (Process p : processes)
+            System.out.println("P" + p.pid + "\t" + p.arrivalTime + "\t" + p.burstTime + "\t" +
+                               p.completionTime + "\t\t" + p.waitingTime + "\t" + p.turnaroundTime);
+        System.out.printf("Average Waiting Time: %.2f\n", totalWT / n);
+        System.out.printf("Average Turnaround Time: %.2f\n", totalTAT / n);
+    }
+
+    public static void priorityScheduling() {
+        System.out.print("Enter number of processes: ");
+        int n = sc.nextInt();
+        Process[] processes = new Process[n];
+        for (int i = 0; i < n; i++) {
+            System.out.print("Enter Arrival Time, Burst Time and Priority for P" + i + ": ");
+            int at = sc.nextInt(), bt = sc.nextInt(), pr = sc.nextInt();
+            processes[i] = new Process(i, at, bt, pr);
+        }
+        int completed = 0, currentTime = 0;
+        double totalWT = 0, totalTAT = 0;
+        boolean[] done = new boolean[n];
+        while (completed != n) {
+            int idx = -1, hp = Integer.MAX_VALUE;
+            for (int i = 0; i < n; i++)
+                if (!done[i] && processes[i].arrivalTime <= currentTime && processes[i].priority < hp) {
+                    hp = processes[i].priority;
+                    idx = i;
+                }
+            if (idx == -1) { currentTime++; continue; }
+            processes[idx].completionTime = currentTime + processes[idx].burstTime;
+            processes[idx].waitingTime = currentTime - processes[idx].arrivalTime;
+            processes[idx].turnaroundTime = processes[idx].waitingTime + processes[idx].burstTime;
+            currentTime += processes[idx].burstTime;
+            totalWT += processes[idx].waitingTime;
+            totalTAT += processes[idx].turnaroundTime;
+            done[idx] = true; completed++;
+        }
+        System.out.println("\nProcess\tArrival\tBurst\tPriority\tCompletion\tWaiting\tTurnaround");
+        for (Process p : processes)
+            System.out.println("P" + p.pid + "\t" + p.arrivalTime + "\t" + p.burstTime + "\t" +
+                               p.priority + "\t\t" + p.completionTime + "\t\t" +
+                               p.waitingTime + "\t" + p.turnaroundTime);
+        System.out.printf("Average Waiting Time: %.2f\n", totalWT / n);
+        System.out.printf("Average Turnaround Time: %.2f\n", totalTAT / n);
+    }
+}
+
+
+Output:
+
+Microsoft Windows [Version 10.0.26200.6901]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\dnyan\Desktop\SPOS_Practical>javac cpu.java
+
+C:\Users\dnyan\Desktop\SPOS_Practical>java cpu
+
+CPU Scheduling Algorithms Menu
+1. First Come First Serve (FCFS)
+2. Shortest Job First (SJF Preemptive)
+3. Priority Scheduling (Non-Preemptive)
+4. Round Robin Scheduling
+5. Exit
+Enter your choice: 1
+Enter number of processes: 3
+Enter Arrival Time and Burst Time for P0: 0 5
+Enter Arrival Time and Burst Time for P1: 1 3
+Enter Arrival Time and Burst Time for P2: 2 8
+
+Process	Arrival	Burst	Completion	Waiting	Turnaround
+P0	0	5	5		0	5
+P1	1	3	8		4	7
+P2	2	8	16		6	14
+Average Waiting Time: 3.33
+Average Turnaround Time: 8.67
+
+CPU Scheduling Algorithms Menu
+1. First Come First Serve (FCFS)
+2. Shortest Job First (SJF Preemptive)
+3. Priority Scheduling (Non-Preemptive)
+4. Round Robin Scheduling
+5. Exit
+Enter your choice: 2
+Enter number of processes: 3
+Enter Arrival Time and Burst Time for P0: 0 7
+Enter Arrival Time and Burst Time for P1: 2 4
+Enter Arrival Time and Burst Time for P2: 4 1
+
+Process	Arrival	Burst	Completion	Waiting	Turnaround
+P0	0	7	12		5	12
+P1	2	4	8		2	6
+P2	4	1	5		0	1
+Average Waiting Time: 2.33
+Average Turnaround Time: 6.33
+
+CPU Scheduling Algorithms Menu
+1. First Come First Serve (FCFS)
+2. Shortest Job First (SJF Preemptive)
+3. Priority Scheduling (Non-Preemptive)
+4. Round Robin Scheduling
+5. Exit
+Enter your choice: 3
+Enter number of processes: 3
+Enter Arrival Time, Burst Time and Priority for P0: 0 5 2
+Enter Arrival Time, Burst Time and Priority for P1: 1 3 1
+Enter Arrival Time, Burst Time and Priority for P2: 2 8 3
+
+Process	Arrival	Burst	Priority	Completion	Waiting	Turnaround
+P1	1	3	1		4		0	3
+P0	0	5	2		9		4	9
+P2	2	8	3		17		7	15
+Average Waiting Time: 3.67
+Average Turnaround Time: 9.00
+
+CPU Scheduling Algorithms Menu
+1. First Come First Serve (FCFS)
+2. Shortest Job First (SJF Preemptive)
+3. Priority Scheduling (Non-Preemptive)
+4. Round Robin Scheduling
+5. Exit
+Enter your choice: 4
+Enter number of processes: 3
+Enter Time Quantum: 2
+Enter Arrival Time and Burst Time for P0: 0 5
+Enter Arrival Time and Burst Time for P1: 1 3
+Enter Arrival Time and Burst Time for P2: 2 8
+
+Process	Arrival	Burst	Completion	Waiting	Turnaround
+P0	0	5	14		9	14
+P1	1	3	10		6	9
+P2	2	8	19		9	17
+Average Waiting Time: 8.00
+Average Turnaround Time: 13.33
+
+CPU Scheduling Algorithms Menu
+1. First Come First Serve (FCFS)
+2. Shortest Job First (SJF Preemptive)
+3. Priority Scheduling (Non-Preemptive)
+4. Round Robin Scheduling
+5. Exit
+Enter your choice: 5
+
+[Program finished]
+
+C:\Users\dnyan\Desktop\SPOS_Practical>
