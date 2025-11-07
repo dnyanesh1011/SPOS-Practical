@@ -1,0 +1,52 @@
+Practical No: 3
+
+// Program to print Hello, world!
+public class Helloworld {          // Class Declaration
+    public static void main(String[] args) {   // Main method
+        System.out.println("Hello, world!");
+    }
+}
+
+Microsoft Windows [Version 10.0.26100.5074]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\dnyan\Desktop\SPOS_Practical>flex tokenss.l
+C:\Users\dnyan\Desktop\SPOS_Practical>gcc lex.yy.c
+C:\Users\dnyan\Desktop\SPOS_Practical>a hello.java
+
+
+public : is a Access specifier
+class : is a Keyword
+Helloworld : is a Class-Name
+{ : is a Bracket
+public : is a Access specifier
+static : is a Keyword
+void : is a Keyword
+main : is a Keyword
+( : is a Bracket
+String : is a DataType
+[ : is a Bracket
+] : is a Bracket
+Batch: A3
+args : is a Variable
+) : is a Bracket
+{ : is a Bracket
+System : is a Keyword
+. : is a Delimiter
+out : is a Keyword
+. : is a Delimiter
+println : is a Keyword
+( : is a Bracket
+" : is a Quote
+Hello : is a Class-Name
+, : is a Delimiter
+world : is a Variable
+! : is a Operator
+" : is a Quote
+) : is a Bracket
+; : is a Delimiter
+} : is a Bracket
+} : is a Bracket
+C:\Users\dnyan\Desktop\SPOS_Practical>
+
+
